@@ -20,7 +20,7 @@ namespace DoneDone
         protected string password;
 
         /// <summary>
-        /// public stringault constructor
+        /// public default constructor
         /// 
         /// </summary>
         /// <param name="domain">company's DoneDone domain</param>
@@ -35,7 +35,7 @@ namespace DoneDone
         }
 
         /// <summary>
-        /// Get possible mime type
+        /// Get mime type
         /// </summary>
         /// <param name="Filename">file name</param>
         /// <returns></returns>
@@ -52,14 +52,14 @@ namespace DoneDone
         } 
 
         /// <summary>
-        /// Compare keys
+        /// Compare keys in two KeyValuePairs
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
         private int CompareKeys(KeyValuePair<string, string> a, KeyValuePair<string, string> b)
         {
-                    return a.Key.CompareTo(b.Key);
+            return a.Key.CompareTo(b.Key);
         }
 
         /// <summary>
@@ -70,9 +70,11 @@ namespace DoneDone
         /// <returns></returns>
         public string calculateSignature(string url, List<KeyValuePair<string, string>> data=null) 
         {
-            if (data != null) {
+            if (data != null) 
+            {
                 data.Sort(CompareKeys);
-                foreach (KeyValuePair<string, string> item in data) {
+                foreach (KeyValuePair<string, string> item in data) 
+                {
                     url += item.Key + item.Value;
                 }
             }
@@ -190,11 +192,8 @@ namespace DoneDone
 
         /// <summary>
         /// Get all Projects with the API enabled
-        /// 
-        /// loadWithIssues:  
         /// </summary>
-        /// <param name="loadWithIssues">Passing true will deep load all of 
-        /// the projects as well as all of their active issues.</param>
+        /// <param name="loadWithIssues">Passing true will deep load all of the projects as well as all of their active issues.</param>
         /// <returns></returns>
         public string GetProjects(bool loadWithIssues = false){
             string url = loadWithIssues ? "Projects/true" : "Projects";
@@ -303,13 +302,16 @@ namespace DoneDone
             data.Add(new KeyValuePair<string, string>("resolver_id", resolverID));
             data.Add(new KeyValuePair<string, string>("tester_id", testerID));
 
-            if (description != null) {
+            if (description != null) 
+            {
                 data.Add(new KeyValuePair<string, string>("description", description));
             }
-            if (tags != null) {
+            if (tags != null)
+            {
                 data.Add(new KeyValuePair<string, string>("tags", tags));
             }
-            if (watcherIDs != null) {
+            if (watcherIDs != null) 
+            {
                 data.Add(new KeyValuePair<string, string>("watcher_ids", watcherIDs));
             }
             return API("Issue/" + projectID, data, attachments);
@@ -333,7 +335,7 @@ namespace DoneDone
 
             if (peopleToCCID != null)
             {
-            data.Add(new KeyValuePair<string, string>("people_to_cc_ids", peopleToCCID));
+                data.Add(new KeyValuePair<string, string>("people_to_cc_ids", peopleToCCID));
             }
 
             return API("Comment/" + projectID + "/" + issueID, data, attachments);
