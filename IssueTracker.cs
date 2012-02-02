@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net;
 using System.Web;
@@ -122,7 +121,7 @@ namespace DoneDone
                         postParams.Add(
                             String.Format("{0}={1}", item.Key, System.Web.HttpUtility.UrlEncode(item.Value)));
                     }
-                    string postQuery = String.Join("&", postParams);
+                    string postQuery = String.Join("&", postParams.ToArray());
                     formData = Encoding.UTF8.GetBytes(postQuery);
                     request.ContentLength = formData.Length;
 
