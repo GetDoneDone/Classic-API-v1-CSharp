@@ -1,14 +1,15 @@
-DoneDone API C# Client Library
+# DoneDone API C# Client Library
 
-== REQUIREMENT ==
+## REQUIREMENT
 C# version 3.5, 4 (developed against 4)
 
-== USAGE ==
+## USAGE
 To use the C# library with a DoneDone project, you will need to enable the API option under the Project Settings page.
 
 Please see http://www.getdonedone.com/api fore more detailed documentation.
 
-=== EXAMPLES ===
+## EXAMPLES
+```C#
 /// Initializing
 using DoneDone;
 
@@ -29,3 +30,4 @@ var issueTracker = new IssueTracker(domain, token, username, password);
 issueTracker.API("GetProjects");
 /// or
 issueTracker.GetProjects();
+```
