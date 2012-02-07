@@ -95,8 +95,8 @@ namespace DoneDone
         /// <param name="update">flag to indicate if this is a PUT operation</param>
         /// <returns>the JSON string returned from server</returns>
         public string API(string methodURL, 
-            List<KeyValuePair<string,string>> data=null, 
-            List<string> attachments=null, bool update=false) 
+            List<KeyValuePair<string,string>> data, 
+            List<string> attachments, bool update) 
         {
             string url = baseURL + methodURL;
             WebRequest request = WebRequest.Create(url);
@@ -196,7 +196,7 @@ namespace DoneDone
         /// <returns></returns>
         public string GetProjects(bool loadWithIssues = false){
             string url = loadWithIssues ? "Projects/true" : "Projects";
-            return API(url);
+            return API(url, null, null,false);
         }
 
 
@@ -206,7 +206,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string GetPriorityLevels()
         {
-            return API("PriorityLevels");
+            return API("PriorityLevels", null, null, false);
         }
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string GetAllPeopleInProject(string projectID)
         {
-            return API("PeopleInProject/" + projectID);
+            return API("PeopleInProject/" + projectID, null, null, false);
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string GetAllIssuesInProject(string projectID)
         {
-            return API("IssuesInProject/" + projectID);
+            return API("IssuesInProject/" + projectID, null, null, false);
         }
 
         /// <summary>
@@ -237,7 +237,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string DoesIssueExist(string projectID, string issueID)
         {
-            return API("DoesIssueExist/" + projectID + "/" + issueID);
+            return API("DoesIssueExist/" + projectID + "/" + issueID, null, null, false);
         }
 
         /// <summary>
@@ -251,7 +251,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string GetPotentialStatusesForIssue(string projectID, string issueID) 
         {
-            return API("PotentialStatusesForIssue/" + projectID + "/" + issueID);
+            return API("PotentialStatusesForIssue/" + projectID + "/" + issueID, null, null, false);
         }
 
         /// <summary>
@@ -263,7 +263,7 @@ namespace DoneDone
         /// <returns></returns>
         public string GetIssueDetails(string projectID, string issueID) 
         {
-            return API("Issue/" + projectID + "/" + issueID);
+            return API("Issue/" + projectID + "/" + issueID, null, null, false);
         }
 
         /// <summary>
@@ -274,7 +274,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string GetPeopleForIssueAssignment(string projectID, string issueID) 
         {
-            return API("PeopleForIssueAssignment/" + projectID + "/" + issueID);
+            return API("PeopleForIssueAssignment/" + projectID + "/" + issueID, null, null, false);
         }
 
         /// <summary>
@@ -313,7 +313,7 @@ namespace DoneDone
             {
                 data.Add(new KeyValuePair<string, string>("watcher_ids", watcherIDs));
             }
-            return API("Issue/" + projectID, data, attachments);
+            return API("Issue/" + projectID, data, attachments, false);
         }
 
         /// <summary>
@@ -337,7 +337,7 @@ namespace DoneDone
                 data.Add(new KeyValuePair<string, string>("people_to_cc_ids", peopleToCCID));
             }
 
-            return API("Comment/" + projectID + "/" + issueID, data, attachments);
+            return API("Comment/" + projectID + "/" + issueID, data, attachments, false);
         }
 
         /// <summary>
