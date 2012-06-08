@@ -1,7 +1,7 @@
 # DoneDone API C# Client Library
 
 ## REQUIREMENT
-C# version 4 (developed against 4)
+.net 4
 
 ## USAGE
 To use the C# library with a DoneDone project, you will need to enable the API option under the Project Settings page.
@@ -14,9 +14,9 @@ class Program
     {
         static void Main(string[] args)
         {
-string DOMAIN = "your_domain";//your donedone account subdomain - so "your_domain" if your account URL is your_domain.mydonedone.com 
-string USERNAME = "your_username";
-string API_TOKEN = "your_token";
+            string DOMAIN = "your_domain";//your donedone account subdomain - so "your_domain" if your account URL is your_domain.mydonedone.com 
+	    string USERNAME = "your_username";
+	    string API_TOKEN = "your_token";
 
             var it = new DoneDone.IssueTracker(DOMAIN, USERNAME, API_TOKEN);
             for (int i = 0; i < 100; i++)
@@ -30,10 +30,13 @@ string API_TOKEN = "your_token";
                 {
                     if (apie.Response != null)
                     {
-                        Console.WriteLine(string.Format("\r\nERROR\r\nCode:{0}\r\n{1}\r\n", apie.Response.StatusCode, apie.Message));
+                        Console.WriteLine(string.Format("\r\nERROR\r\nCode:{0}\r\n{1}\r\n", 
+   					  apie.Response.StatusCode, apie.Message));
                         if (apie.Response.StatusCode == System.Net.HttpStatusCode.Conflict)
                         {
-                            int retry_after = int.Parse(apie.Response.GetResponseHeader("Retry-After"));
+                            int retry_after = int.Parse(
+						apie.Response.GetResponseHeader("Retry-After"));
+
                             Console.WriteLine("Retry after {0} seconds", retry_after);
                         }
                     }
