@@ -63,8 +63,9 @@ namespace DoneDone
             {
                 auth = Convert.ToBase64String(Encoding.Default.GetBytes(string.Format("{0}:{1}", username, password)));
 
-            }
-            baseURL = string.Format("http://{0}.mydonedone.local:64800/IssueTracker/API/", domain);
+            } 
+            baseURL = string.Format("https://{0}.mydonedone.com/IssueTracker/API/", domain);
+       
         }
 
         /// <summary>
