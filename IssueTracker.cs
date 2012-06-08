@@ -8,13 +8,28 @@ using System.Security.Cryptography;
 
 namespace DoneDone
 {
+    public sealed class APIException : Exception
+    {
+        private HttpWebResponse _response;
+        public HttpWebResponse Response
+        {
+            get
+            {
+                return _response;
+            }
+        }
+        public APIException(string message, HttpWebResponse resp)
+            : base(message)
+        {
+            _response = resp;
+        }
+    }
     /// <summary>
     /// Provide access to the DoneDone IssueTracker API. 
     /// </summary>
     public class IssueTracker
     {
         protected string baseURL;
-        protected string token;
         protected string auth;
         protected string password;
 
@@ -23,14 +38,33 @@ namespace DoneDone
         /// 
         /// </summary>
         /// <param name="domain">company's DoneDone domain</param>
-        /// <param name="token">the project API token</param>
         /// <param name="username">DoneDone username</param>
-        /// <param name="password">DoneDone password</param>
+        /// <param name="password_or_api_token">DoneDone password or API Token</param>
+        public IssueTracker(string domain, string username, string password_or_api_token)
+        {
+            auth = Convert.ToBase64String(Encoding.Default.GetBytes(string.Format("{0}:{1}", username, password_or_api_token)));
+            baseURL = string.Format("https://{0}.mydonedone.com/IssueTracker/API/", domain);
+        }
+
+        /// <summary>
+        /// retaining for backwards compatibility
+        /// </summary>
+        /// <param name="domain">your domain</param>
+        /// <param name="APItoken">your token</param>
+        /// <param name="username">your username</param>
+        /// <param name="password">your password</param>
         public IssueTracker(string domain, string APItoken, string username, string password)
         {
-            auth = Convert.ToBase64String(Encoding.Default.GetBytes(username + ":" + password));
-            baseURL = "https://%domain.mydonedone.com/IssueTracker/API/".Replace("%domain", domain);
-            token = APItoken;
+            if (!string.IsNullOrWhiteSpace(APItoken))
+            {
+                auth = Convert.ToBase64String(Encoding.Default.GetBytes(string.Format("{0}:{1}", username, APItoken)));
+            }
+            else
+            {
+                auth = Convert.ToBase64String(Encoding.Default.GetBytes(string.Format("{0}:{1}", username, password)));
+
+            }
+            baseURL = string.Format("http://{0}.mydonedone.local:64800/IssueTracker/API/", domain);
         }
 
         /// <summary>
@@ -48,42 +82,10 @@ namespace DoneDone
                 mime = rk.GetValue("Content Type").ToString();
             }
             return mime;
-        } 
-
-        /// <summary>
-        /// Compare keys in two KeyValuePairs
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        private int CompareKeys(KeyValuePair<string, string> a, KeyValuePair<string, string> b)
-        {
-            return a.Key.CompareTo(b.Key);
         }
 
-        /// <summary>
-        /// Calculate signature for request
-        /// </summary>
-        /// <param name="url">DoneDone API url</param>
-        /// <param name="data">optional POST form data</param>
-        /// <returns></returns>
-        public string calculateSignature(string url, List<KeyValuePair<string, string>> data=null) 
-        {
-            if (data != null) 
-            {
-                data.Sort(CompareKeys);
-                foreach (KeyValuePair<string, string> item in data) 
-                {
-                    url += item.Key + item.Value;
-                }
-            }
-            using (HMACSHA1 hmac = new HMACSHA1(System.Text.Encoding.UTF8.GetBytes(token), true))
-            {
-                return Convert.ToBase64String(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(url)));
-            }
 
-        }
-        
+
         /// <summary>
         /// Perform generic API calling
         /// 
@@ -94,15 +96,14 @@ namespace DoneDone
         /// <param name="attachments">optional list of file paths</param>
         /// <param name="update">flag to indicate if this is a PUT operation</param>
         /// <returns>the JSON string returned from server</returns>
-        public string API(string methodURL, 
-            List<KeyValuePair<string,string>> data, 
-            List<string> attachments, bool update) 
+        private string api(string methodURL,
+            List<KeyValuePair<string, string>> data,
+            List<string> attachments, bool update)
         {
             string url = baseURL + methodURL;
-            WebRequest request = WebRequest.Create(url);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Headers.Add("Authorization: Basic " + auth);
-            request.Headers.Add(
-                "X-DoneDone-Signature: " + calculateSignature(url, data));
+
             if (data == null && attachments == null)
             {
                 request.Method = "GET";
@@ -131,8 +132,8 @@ namespace DoneDone
                         requestStream.Flush();
                         requestStream.Close();
                     }
-                } 
-                else 
+                }
+                else
                 {
                     string boundary = "------------------------" + DateTime.Now.Ticks;
                     request.ContentType = "multipart/form-data; boundary=" + boundary;
@@ -142,7 +143,7 @@ namespace DoneDone
                     string formatedData = "";
                     var fieldTemplate = newLine + "--" + boundary + newLine +
                         "Content-Type: text/plain" + newLine +
-                        "Content-Disposition: form-data;name=\"{0}\"" + 
+                        "Content-Disposition: form-data;name=\"{0}\"" +
                         newLine + newLine + "{1}";
                     foreach (KeyValuePair<string, string> item in data)
                     {
@@ -152,7 +153,7 @@ namespace DoneDone
                     byte[] bytes = { };
                     StringBuilder stringBuilder = new StringBuilder();
                     var fileTemplate = newLine + "--" + boundary + newLine +
-                        "Content-Disposition: filename=\"{0}\"" + 
+                        "Content-Disposition: filename=\"{0}\"" +
                         newLine + "Content-Type: {1}" + newLine + newLine;
                     foreach (var path in attachments)
                     {
@@ -161,7 +162,7 @@ namespace DoneDone
                         formatedData +=
                             String.Format(fileTemplate, fileName, getMimeType(fileName));
                         formatedData += Convert.ToBase64String(bytes);
-                         
+
                     }
                     formatedData += newLine + "--" + boundary + "--";
                     request.ContentLength = formatedData.Length;
@@ -176,15 +177,48 @@ namespace DoneDone
             try
             {
                 // Get the response.
-                using (WebResponse response = request.GetResponse())
-                using (System.IO.Stream responseStream = response.GetResponseStream())
-                using (System.IO.StreamReader reader = new System.IO.StreamReader(responseStream))
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
-                    return reader.ReadToEnd();
+
+                    using (System.IO.Stream responseStream = response.GetResponseStream())
+                    {
+                        using (System.IO.StreamReader reader = new System.IO.StreamReader(responseStream))
+                        {
+
+                            return reader.ReadToEnd();
+
+                        }
+                    }
                 }
+            }
+            catch (WebException we)
+            {
+                var response = (HttpWebResponse)we.Response;
+
+                string message = "An API Error occurred.";
+                if (response == null)
+                {
+                    throw new APIException(message, null);
+                }
+                var code = response.StatusCode;
+                using (System.IO.Stream responseStream = response.GetResponseStream())
+                {
+                    using (System.IO.StreamReader reader = new System.IO.StreamReader(responseStream))
+                    {
+
+                        message = reader.ReadToEnd();
+
+                    }
+                }
+                throw new APIException(message, response);
+            }
+            catch (APIException)
+            {
+                throw;
             }
             catch (Exception e)
             {
+
                 return e.Message;
             }
         }
@@ -194,9 +228,10 @@ namespace DoneDone
         /// </summary>
         /// <param name="loadWithIssues">Passing true will deep load all of the projects as well as all of their active issues.</param>
         /// <returns></returns>
-        public string GetProjects(bool loadWithIssues = false){
+        public string GetProjects(bool loadWithIssues = false)
+        {
             string url = loadWithIssues ? "Projects/true" : "Projects";
-            return API(url, null, null,false);
+            return api(url, null, null, false);
         }
 
 
@@ -206,7 +241,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string GetPriorityLevels()
         {
-            return API("PriorityLevels", null, null, false);
+            return api("PriorityLevels", null, null, false);
         }
 
         /// <summary>
@@ -216,7 +251,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string GetAllPeopleInProject(string projectID)
         {
-            return API("PeopleInProject/" + projectID, null, null, false);
+            return api("PeopleInProject/" + projectID, null, null, false);
         }
 
         /// <summary>
@@ -226,7 +261,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string GetAllIssuesInProject(string projectID)
         {
-            return API("IssuesInProject/" + projectID, null, null, false);
+            return api("IssuesInProject/" + projectID, null, null, false);
         }
 
         /// <summary>
@@ -237,7 +272,7 @@ namespace DoneDone
         /// <returns>the JSON string returned from server</returns>
         public string DoesIssueExist(string projectID, string issueID)
         {
-            return API("DoesIssueExist/" + projectID + "/" + issueID, null, null, false);
+            return api("DoesIssueExist/" + projectID + "/" + issueID, null, null, false);
         }
 
         /// <summary>
@@ -249,9 +284,9 @@ namespace DoneDone
         /// <param name="projectID">project id</param>
         /// <param name="issueID">issue id</param>
         /// <returns>the JSON string returned from server</returns>
-        public string GetPotentialStatusesForIssue(string projectID, string issueID) 
+        public string GetPotentialStatusesForIssue(string projectID, string issueID)
         {
-            return API("PotentialStatusesForIssue/" + projectID + "/" + issueID, null, null, false);
+            return api("PotentialStatusesForIssue/" + projectID + "/" + issueID, null, null, false);
         }
 
         /// <summary>
@@ -261,9 +296,9 @@ namespace DoneDone
         /// <param name="projectID">project id</param>
         /// <param name="issueID">issue id</param>
         /// <returns></returns>
-        public string GetIssueDetails(string projectID, string issueID) 
+        public string GetIssueDetails(string projectID, string issueID)
         {
-            return API("Issue/" + projectID + "/" + issueID, null, null, false);
+            return api("Issue/" + projectID + "/" + issueID, null, null, false);
         }
 
         /// <summary>
@@ -272,9 +307,9 @@ namespace DoneDone
         /// <param name="projectID">project id</param>
         /// <param name="issueID">issue id</param>
         /// <returns>the JSON string returned from server</returns>
-        public string GetPeopleForIssueAssignment(string projectID, string issueID) 
+        public string GetPeopleForIssueAssignment(string projectID, string issueID)
         {
-            return API("PeopleForIssueAssignment/" + projectID + "/" + issueID, null, null, false);
+            return api("PeopleForIssueAssignment/" + projectID + "/" + issueID, null, null, false);
         }
 
         /// <summary>
@@ -291,7 +326,7 @@ namespace DoneDone
         /// <param name="attachments">list of file paths.</param>
         /// <returns>the JSON string returned from server</returns>
         public string CreateIssue(
-            string projectID, string title, string priorityID, 
+            string projectID, string title, string priorityID,
             string resolverID, string testerID, string description = null,
             string tags = null, string watcherIDs = null, List<string> attachments = null)
         {
@@ -301,7 +336,7 @@ namespace DoneDone
             data.Add(new KeyValuePair<string, string>("resolver_id", resolverID));
             data.Add(new KeyValuePair<string, string>("tester_id", testerID));
 
-            if (description != null) 
+            if (description != null)
             {
                 data.Add(new KeyValuePair<string, string>("description", description));
             }
@@ -309,11 +344,11 @@ namespace DoneDone
             {
                 data.Add(new KeyValuePair<string, string>("tags", tags));
             }
-            if (watcherIDs != null) 
+            if (watcherIDs != null)
             {
                 data.Add(new KeyValuePair<string, string>("watcher_ids", watcherIDs));
             }
-            return API("Issue/" + projectID, data, attachments, false);
+            return api("Issue/" + projectID, data, attachments, false);
         }
 
         /// <summary>
@@ -337,7 +372,7 @@ namespace DoneDone
                 data.Add(new KeyValuePair<string, string>("people_to_cc_ids", peopleToCCID));
             }
 
-            return API("Comment/" + projectID + "/" + issueID, data, attachments, false);
+            return api("Comment/" + projectID + "/" + issueID, data, attachments, false);
         }
 
         /// <summary>
@@ -364,9 +399,9 @@ namespace DoneDone
         /// <param name="attachments">list of file paths</param>
         /// <returns>the JSON string returned from server</returns>
         public string UpdateIssue(
-            string projectID, string issueID, string title = null, 
+            string projectID, string issueID, string title = null,
             string priorityID = null, string resolverID = null,
-            string testerID = null, string description = null,  
+            string testerID = null, string description = null,
             string tags = null, string stateID = null,
             List<string> attachments = null)
         {
@@ -399,7 +434,7 @@ namespace DoneDone
             {
                 data.Add(new KeyValuePair<string, string>("state_id", stateID));
             }
-            return API("Issue/" + projectID + "/" + issueID, data, attachments, true);
+            return api("Issue/" + projectID + "/" + issueID, data, attachments, true);
         }
 
     }
