@@ -121,7 +121,7 @@ namespace DoneDone
                     foreach (KeyValuePair<string, string> item in data)
                     {
                         postParams.Add(
-                            String.Format("{0}={1}", item.Key, System.Web.HttpUtility.UrlEncode(item.Value)));
+                            String.Format("{0}={1}", item.Key, Uri.EscapeUriString(item.Value)));
                     }
                     string postQuery = String.Join("&", postParams.ToArray());
                     formData = Encoding.UTF8.GetBytes(postQuery);
