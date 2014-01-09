@@ -1,51 +1,53 @@
 # DoneDone API C# Client Library
 
-## REQUIREMENT
-.net 4
+This a C# wrapper to the DoneDone API
 
-## USAGE
-To use the C# library with a DoneDone project, you will need to enable the API option under the Project Settings page.
+## Requirements
+.Net 4 or above
 
-Please see http://www.getdonedone.com/api fore more detailed documentation.
+## API Usage
 
-## EXAMPLES
+You must enable the "Web Service API" for each DoneDone project you want to be accessible via the API.  Just go to the "Project Settings" page of a project, to enable the API. See http://www.getdonedone.com/api for more detailed documentation.
+
+There is currently a rate limit of 1000 requests per hour per account.
+
+## Example setup
 ```C#
 class Program
     {
         static void Main(string[] args)
         {
-            string DOMAIN = "your_domain";//your donedone account subdomain - so "your_domain" if your account URL is your_domain.mydonedone.com 
-	    string USERNAME = "your_username";
-	    string API_TOKEN = "your_token";
+            string subdomain = "acmecorp"; // The subdomain of your account (e.g. acmecorp.mydonedone.com)
+	    string username = "username";
+	    string apiToken = "XXXXXXXXXXXXXXXXXXXX"; // This can be found under your "View Profile" page in DoneDone
 
-            var it = new DoneDone.IssueTracker(DOMAIN, USERNAME, API_TOKEN);
-            for (int i = 0; i < 100; i++)
+            var issueTrackerApi = new DoneDone.IssueTracker(subdomain, username, apiToken);
+
+            try
             {
-                try
+	 	// Call to get API-enabled projects in account. Returns JSON string of projects
+                string availableProjects = issueTrackerApi.GetProjects(); 
+                Console.WriteLine(p);
+            }
+            catch (DoneDone.APIException apie)
+            {
+                if (apie.Response != null)
                 {
-                    string p = it.GetProjects();
-                    Console.WriteLine(p);
+                     Console.WriteLine(string.Format("\r\nERROR\r\nCode:{0}\r\n{1}\r\n", 
+   			apie.Response.StatusCode, apie.Message));
+                       
+		     if (apie.Response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                     {
+                          int retry_after = int.Parse(apie.Response.GetResponseHeader("Retry-After"));
+		          Console.WriteLine("Retry after {0} seconds", retry_after);
+                     }
                 }
-                catch (DoneDone.APIException apie)
+                else
                 {
-                    if (apie.Response != null)
-                    {
-                        Console.WriteLine(string.Format("\r\nERROR\r\nCode:{0}\r\n{1}\r\n", 
-   					  apie.Response.StatusCode, apie.Message));
-                        if (apie.Response.StatusCode == System.Net.HttpStatusCode.Conflict)
-                        {
-                            int retry_after = int.Parse(
-						apie.Response.GetResponseHeader("Retry-After"));
-
-                            Console.WriteLine("Retry after {0} seconds", retry_after);
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Internal server error"); 
-                    }
+                     Console.WriteLine("Internal server error"); 
                 }
             }
+            
             Console.ReadKey();
         }
 ```
