@@ -446,7 +446,7 @@ namespace DoneDone
                 data.Add(new KeyValuePair<string, string>("due_date", dueDate));
             }
 
-            return api("Issue/" + projectID + "/" + issueID, data, attachments, true);
+            return api("Issue/" + projectID + "/" + issueID, data, null, true);
         }
     }
 }
