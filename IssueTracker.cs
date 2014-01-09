@@ -329,7 +329,7 @@ namespace DoneDone
         public string CreateIssue(
             string projectID, string title, string priorityID,
             string resolverID, string testerID, string description = null,
-            string tags = null, string watcherIDs = null, List<string> attachments = null)
+            string tags = null, string watcherIDs = null, string dueDate = null, List<string> attachments = null)
         {
             var data = new List<KeyValuePair<string, string>>();
             data.Add(new KeyValuePair<string, string>("title", title));
@@ -349,6 +349,11 @@ namespace DoneDone
             {
                 data.Add(new KeyValuePair<string, string>("watcher_ids", watcherIDs));
             }
+            if (dueDate != null)
+            {
+                data.Add(new KeyValuePair<string, string>("due_date", dueDate));
+            }
+
             return api("Issue/" + projectID, data, attachments, false);
         }
 
@@ -397,16 +402,17 @@ namespace DoneDone
         /// <param name="description">optional description of the issue.</param>
         /// <param name="tags">a string of tags delimited by comma.</param>
         /// <param name="stateID">a valid state that this issue can transition to</param>
-        /// <param name="attachments">list of file paths</param>
+        /// <param name="dueDate">optional due date</param>
         /// <returns>the JSON string returned from server</returns>
         public string UpdateIssue(
             string projectID, string issueID, string title = null,
             string priorityID = null, string resolverID = null,
             string testerID = null, string description = null,
             string tags = null, string stateID = null,
-            List<string> attachments = null)
+            string dueDate = null)
         {
             var data = new List<KeyValuePair<string, string>>();
+
             if (title != null)
             {
                 data.Add(new KeyValuePair<string, string>("title", title));
@@ -435,8 +441,12 @@ namespace DoneDone
             {
                 data.Add(new KeyValuePair<string, string>("state_id", stateID));
             }
+            if (dueDate != null)
+            {
+                data.Add(new KeyValuePair<string, string>("due_date", dueDate));
+            }
+
             return api("Issue/" + projectID + "/" + issueID, data, attachments, true);
         }
-
     }
 }
