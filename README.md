@@ -1,4 +1,4 @@
-# DoneDone Classic API C# Client Library
+# DoneDone Classic API v1 C# Wrapper
 
 This a C# wrapper to the DoneDone Classic API v1. For DoneDone Classic API v2, visit: https://github.com/GetDoneDone/Classic-API-V2-CSharp
 
