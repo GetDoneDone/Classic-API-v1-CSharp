@@ -1,6 +1,6 @@
-# DoneDone API C# Client Library
+# DoneDone Classic API C# Client Library
 
-This a C# wrapper to the DoneDone API
+This a C# wrapper to the DoneDone Classic API. For DoneDone 2, visit: https://github.com/GetDoneDone/Classic-API-V2-CSharp
 
 ## Requirements
 .Net 4 or above
